@@ -97,4 +97,10 @@ mod test {
         assert_eq!(dna.get(7), 0);
         assert_eq!(dna.length, 8);
     }
+
+    #[test]
+    fn can_be_converted_to_a_string() {
+        let str = "ATACCGTA";
+        assert_eq!(Dna::from_ascii(str).to_string(), str);
+    }
 }

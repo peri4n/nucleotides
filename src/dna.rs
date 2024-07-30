@@ -7,7 +7,7 @@ const NUCS_PER_BLOCK: usize = size_of::<u8>() * 4;
 
 const MASK: u8 = 3;
 
-#[derive(Debug)]
+#[derive(Debug, Eq)]
 pub struct Dna {
     length: usize,
     nucleotides: Vec<u8>,
@@ -31,14 +31,14 @@ impl Dna {
     pub fn from_ascii(ascii: &str) -> Dna {
         let mut dna = Dna {
             length: ascii.len(),
-            nucleotides: vec![0; ascii.len() / NUCS_PER_BLOCK],
+            nucleotides: vec![0; ((ascii.len() as f32) / NUCS_PER_BLOCK as f32).ceil() as usize],
         };
 
         for (i, c) in ascii.char_indices() {
             match c {
-                'C' => dna.set_nucleotide(i, 1),
-                'G' => dna.set_nucleotide(i, 2),
-                'T' => dna.set_nucleotide(i, 3),
+                'C' | 'c' => dna.set_nucleotide(i, 1),
+                'G' | 'g' => dna.set_nucleotide(i, 2),
+                'T' | 't' => dna.set_nucleotide(i, 3),
                 _ => dna.set_nucleotide(i, 0),
             }
         }
@@ -49,7 +49,7 @@ impl Dna {
     #[inline(always)]
     fn address(&self, index: usize) -> (usize, u8) {
         let block = index / NUCS_PER_BLOCK;
-        let bit = (index % NUCS_PER_BLOCK * BITS_PER_NUCLEOTIDE) as u8;
+        let bit = ((NUCS_PER_BLOCK - 1 - (index % NUCS_PER_BLOCK)) * BITS_PER_NUCLEOTIDE) as u8;
         (block, bit)
     }
 
@@ -79,13 +79,40 @@ impl fmt::Display for Dna {
     }
 }
 
+impl TryFrom<&str> for Dna {
+    type Error = &'static str;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Ok(Dna::from_ascii(value))
+    }
+}
+
+impl PartialEq for Dna {
+    fn eq(&self, other: &Self) -> bool {
+        self.nucleotides == other.nucleotides && self.length == other.length
+    }
+}
+
+impl PartialOrd for Dna{
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.nucleotides.cmp(&other.nucleotides))
+    }
+    
+}
+
+impl Ord for Dna {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        PartialOrd::partial_cmp(self, other).unwrap()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::Dna;
 
     #[test]
     fn can_be_created_from_a_string() {
-        let dna = Dna::from_ascii("ATGCCGTA");
+        let dna = Dna::try_from("ATGCCGTA").unwrap();
 
         assert_eq!(dna.get(0), 0);
         assert_eq!(dna.get(1), 3);
@@ -102,5 +129,25 @@ mod test {
     fn can_be_converted_to_a_string() {
         let str = "ATACCGTA";
         assert_eq!(Dna::from_ascii(str).to_string(), str);
+    }
+
+    #[test]
+    fn can_be_sorted() {
+        let mut sequences = vec![
+            Dna::from_ascii("ATGCCGTA"),
+            Dna::from_ascii("CTAACGAA"),
+            Dna::from_ascii("ATAC"),
+            Dna::from_ascii("ATAA"),
+            Dna::from_ascii("GTAGGG"),
+        ];
+        sequences.sort();
+
+        assert_eq!(sequences, vec![
+            Dna::from_ascii("ATAA"),
+            Dna::from_ascii("ATAC"),
+            Dna::from_ascii("ATGCCGTA"),
+            Dna::from_ascii("CTAACGAA"),
+            Dna::from_ascii("GTAGGG")
+        ]);
     }
 }

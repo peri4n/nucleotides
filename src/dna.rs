@@ -36,10 +36,10 @@ impl Dna {
 
         for (i, c) in ascii.char_indices() {
             match c {
-                'C' | 'c' => dna.set_nucleotide(i, 1),
-                'G' | 'g' => dna.set_nucleotide(i, 2),
-                'T' | 't' => dna.set_nucleotide(i, 3),
-                _ => dna.set_nucleotide(i, 0),
+                'C' | 'c' => dna.init_with(i, 1),
+                'G' | 'g' => dna.init_with(i, 2),
+                'T' | 't' => dna.init_with(i, 3),
+                _ => dna.init_with(i, 0),
             }
         }
 
@@ -47,20 +47,56 @@ impl Dna {
     }
 
     #[inline(always)]
-    fn address(&self, index: usize) -> (usize, u8) {
+    pub fn address(&self, index: usize) -> (usize, u8) {
         let block = index / NUCS_PER_BLOCK;
         let bit = ((NUCS_PER_BLOCK - 1 - (index % NUCS_PER_BLOCK)) * BITS_PER_NUCLEOTIDE) as u8;
         (block, bit)
     }
 
-    fn set_nucleotide(&mut self, index: usize, nucleotide: u8) {
+    /// Returns the internal bit sequence of the DNA sequence.
+    pub fn bit_string(&self) -> String {
+            let mut bit_string = String::new();
+            for i in 0..self.nucleotides.len() {
+                bit_string.push_str(&format!("{:08b} ", self.nucleotides[i]));
+            }
+            bit_string
+        }
+
+    /// Initially sets the base at the given index (0-based).
+    ///
+    /// Note: If the index already contains set bits, bit patterns may cause bugs. 
+    fn init_with(&mut self, index: usize, nucleotide: u8) {
         let (block, bit) = self.address(index);
         self.nucleotides[block] |= nucleotide << bit;
     }
 
+    /// Returns the base at the given index.
+    ///
+    /// ```
+    /// let dna = nuc::dna::Dna::from_ascii("ACGT");
+    ///
+    /// assert_eq!(dna.get(0), 0);
+    /// assert_eq!(dna.get(1), 1);
+    /// assert_eq!(dna.get(2), 2);
+    /// assert_eq!(dna.get(3), 3);
+    /// ```
     pub fn get(&self, index: usize) -> u8 {
         let (block, bit) = self.address(index);
         (self.nucleotides[block] >> bit) & MASK
+    }
+
+    /// Computes the reverse complement of the DNA sequence.
+    ///
+    /// ```
+    /// let dna = nuc::dna::Dna::from_ascii("ATGCCGTA").rc();
+    /// assert_eq!(dna.to_string(), "TACGGCAT");
+    /// ```
+    pub fn rc(&self) -> Dna {
+        let mut rc = Dna::new(self.length);
+        for i in 0..self.length {
+            rc.init_with(i, 3 - self.get(self.length - 1 - i));
+        }
+        rc
     }
 }
 
@@ -123,12 +159,6 @@ mod test {
         assert_eq!(dna.get(6), 3);
         assert_eq!(dna.get(7), 0);
         assert_eq!(dna.length, 8);
-    }
-
-    #[test]
-    fn can_be_converted_to_a_string() {
-        let str = "ATACCGTA";
-        assert_eq!(Dna::from_ascii(str).to_string(), str);
     }
 
     #[test]

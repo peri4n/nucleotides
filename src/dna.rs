@@ -31,7 +31,7 @@ impl Dna {
     pub fn from_ascii(ascii: &str) -> Dna {
         let mut dna = Dna {
             length: ascii.len(),
-            nucleotides: vec![0; ((ascii.len() as f32) / NUCS_PER_BLOCK as f32).ceil() as usize],
+            nucleotides: vec![0; Dna::bytes_to_store(ascii.len())],
         };
 
         for (i, c) in ascii.char_indices() {
@@ -55,16 +55,16 @@ impl Dna {
 
     /// Returns the internal bit sequence of the DNA sequence.
     pub fn bit_string(&self) -> String {
-            let mut bit_string = String::new();
-            for i in 0..self.nucleotides.len() {
-                bit_string.push_str(&format!("{:08b} ", self.nucleotides[i]));
-            }
-            bit_string
+        let mut bit_string = String::new();
+        for i in 0..self.nucleotides.len() {
+            bit_string.push_str(&format!("{:08b} ", self.nucleotides[i]));
         }
+        bit_string
+    }
 
     /// Initially sets the base at the given index (0-based).
     ///
-    /// Note: If the index already contains set bits, bit patterns may cause bugs. 
+    /// Note: If the index already contains set bits, bit patterns may cause bugs.
     fn init_with(&mut self, index: usize, nucleotide: u8) {
         let (block, bit) = self.address(index);
         self.nucleotides[block] |= nucleotide << bit;
@@ -98,6 +98,39 @@ impl Dna {
         }
         rc
     }
+
+    /// Appends a DNA sequence to the end of the current sequence.
+    ///
+    /// ```
+    /// let mut dna = nuc::dna::Dna::from_ascii("ATGCCGTA");
+    /// dna.append(&nuc::dna::Dna::from_ascii("TACCAT"));
+    /// assert_eq!(dna.to_string(), "ATGCCGTATACCAT");
+    /// ```
+    pub fn append(&mut self, dna: &Dna) {
+        self.nucleotides
+            .resize(Dna::bytes_to_store(self.length + dna.length), 0);
+
+        for i in 0..dna.length {
+            self.init_with(self.length + i, dna.get(i));
+        }
+        self.length += dna.length;
+    }
+
+    /// Trims the DNA sequence to the given size.
+    ///
+    /// ```
+    /// let mut dna = nuc::dna::Dna::from_ascii("ATGCCGTA");
+    /// dna.trim(5);
+    /// assert_eq!(dna.to_string(), "ATGCC");
+    /// ```
+    pub fn trim(&mut self, size: usize) {
+        self.length = size;
+        self.nucleotides.truncate(Dna::bytes_to_store(size));
+    }
+
+    fn bytes_to_store(length: usize) -> usize {
+        ((length as f32) / NUCS_PER_BLOCK as f32).ceil() as usize
+    }
 }
 
 impl fmt::Display for Dna {
@@ -129,11 +162,10 @@ impl PartialEq for Dna {
     }
 }
 
-impl PartialOrd for Dna{
+impl PartialOrd for Dna {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.nucleotides.cmp(&other.nucleotides))
     }
-    
 }
 
 impl Ord for Dna {
@@ -172,12 +204,27 @@ mod test {
         ];
         sequences.sort();
 
-        assert_eq!(sequences, vec![
-            Dna::from_ascii("ATAA"),
-            Dna::from_ascii("ATAC"),
-            Dna::from_ascii("ATGCCGTA"),
-            Dna::from_ascii("CTAACGAA"),
-            Dna::from_ascii("GTAGGG")
-        ]);
+        assert_eq!(
+            sequences,
+            vec![
+                Dna::from_ascii("ATAA"),
+                Dna::from_ascii("ATAC"),
+                Dna::from_ascii("ATGCCGTA"),
+                Dna::from_ascii("CTAACGAA"),
+                Dna::from_ascii("GTAGGG")
+            ]
+        );
+    }
+
+    #[test]
+    fn can_be_appended() {
+        let mut dna = Dna::from_ascii("ATGCCGTA");
+        dna.append(&Dna::from_ascii("AAA"));
+        dna.append(&Dna::from_ascii("CCC"));
+        dna.append(&Dna::from_ascii("GGG"));
+        dna.append(&Dna::from_ascii("TTT"));
+        dna.append(&Dna::from_ascii(""));
+
+        assert_eq!(dna.to_string(), "ATGCCGTAAAACCCGGGTTT");
     }
 }

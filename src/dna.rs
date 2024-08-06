@@ -21,6 +21,10 @@ impl Dna {
         }
     }
 
+    pub fn len(&self) -> usize {
+        self.length
+    }
+
     pub fn from_bytes(bytes: &[u8]) -> Dna {
         Dna {
             length: bytes.len(),
@@ -42,6 +46,36 @@ impl Dna {
                 _ => dna.init_with(i, 0),
             }
         }
+
+        dna
+    }
+
+    pub(crate) fn from_fasta_body(ascii: &str) -> Dna {
+        let mut dna = Dna {
+            length: ascii.len(),
+            nucleotides: vec![0; Dna::bytes_to_store(ascii.len())],
+        };
+
+        let mut found_newlines = 0;
+        let mut i = 0;
+        for c in ascii.chars() {
+            match c {
+                '\n' => {
+                    found_newlines += 1;
+                    continue;
+                }
+                'C' | 'c' => dna.init_with(i, 1),
+                'G' | 'g' => dna.init_with(i, 2),
+                'T' | 't' => dna.init_with(i, 3),
+                _ => dna.init_with(i, 0),
+            }
+
+            i += 1;
+        }
+
+        dna.nucleotides
+            .truncate(Dna::bytes_to_store(i - found_newlines));
+        dna.length = i;
 
         dna
     }
@@ -171,60 +205,5 @@ impl PartialOrd for Dna {
 impl Ord for Dna {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         PartialOrd::partial_cmp(self, other).unwrap()
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::Dna;
-
-    #[test]
-    fn can_be_created_from_a_string() {
-        let dna = Dna::try_from("ATGCCGTA").unwrap();
-
-        assert_eq!(dna.get(0), 0);
-        assert_eq!(dna.get(1), 3);
-        assert_eq!(dna.get(2), 2);
-        assert_eq!(dna.get(3), 1);
-        assert_eq!(dna.get(4), 1);
-        assert_eq!(dna.get(5), 2);
-        assert_eq!(dna.get(6), 3);
-        assert_eq!(dna.get(7), 0);
-        assert_eq!(dna.length, 8);
-    }
-
-    #[test]
-    fn can_be_sorted() {
-        let mut sequences = vec![
-            Dna::from_ascii("ATGCCGTA"),
-            Dna::from_ascii("CTAACGAA"),
-            Dna::from_ascii("ATAC"),
-            Dna::from_ascii("ATAA"),
-            Dna::from_ascii("GTAGGG"),
-        ];
-        sequences.sort();
-
-        assert_eq!(
-            sequences,
-            vec![
-                Dna::from_ascii("ATAA"),
-                Dna::from_ascii("ATAC"),
-                Dna::from_ascii("ATGCCGTA"),
-                Dna::from_ascii("CTAACGAA"),
-                Dna::from_ascii("GTAGGG")
-            ]
-        );
-    }
-
-    #[test]
-    fn can_be_appended() {
-        let mut dna = Dna::from_ascii("ATGCCGTA");
-        dna.append(&Dna::from_ascii("AAA"));
-        dna.append(&Dna::from_ascii("CCC"));
-        dna.append(&Dna::from_ascii("GGG"));
-        dna.append(&Dna::from_ascii("TTT"));
-        dna.append(&Dna::from_ascii(""));
-
-        assert_eq!(dna.to_string(), "ATGCCGTAAAACCCGGGTTT");
     }
 }

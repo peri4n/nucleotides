@@ -61,6 +61,16 @@ impl Dna {
         self.length
     }
 
+    /// Checks if the DNA sequence is empty.
+    ///
+    /// ```
+    /// let dna = nuc::dna::Dna::new(0);
+    /// assert!(dna.is_empty());
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.length == 0
+    }
+
     pub fn from_bytes(bytes: &[u8]) -> Dna {
         Dna {
             length: bytes.len(),

@@ -16,12 +16,10 @@ fn from_fasta_body(ascii: &str) -> Dna {
         nucleotides: vec![0; Dna::bytes_to_store(ascii.len())],
     };
 
-    let mut found_newlines = 0;
     let mut i = 0;
     for c in ascii.chars() {
         match c {
             '\n' => {
-                found_newlines += 1;
                 continue;
             }
             'C' | 'c' => dna.init_with(i, 1),

@@ -9,8 +9,8 @@ const MASK: u8 = 3;
 
 #[derive(Debug, Eq)]
 pub struct Dna {
-    length: usize,
-    nucleotides: Vec<u8>,
+    pub(crate) length: usize,
+    pub(crate) nucleotides: Vec<u8>,
 }
 
 impl Dna {
@@ -50,36 +50,6 @@ impl Dna {
         dna
     }
 
-    pub(crate) fn from_fasta_body(ascii: &str) -> Dna {
-        let mut dna = Dna {
-            length: ascii.len(),
-            nucleotides: vec![0; Dna::bytes_to_store(ascii.len())],
-        };
-
-        let mut found_newlines = 0;
-        let mut i = 0;
-        for c in ascii.chars() {
-            match c {
-                '\n' => {
-                    found_newlines += 1;
-                    continue;
-                }
-                'C' | 'c' => dna.init_with(i, 1),
-                'G' | 'g' => dna.init_with(i, 2),
-                'T' | 't' => dna.init_with(i, 3),
-                _ => dna.init_with(i, 0),
-            }
-
-            i += 1;
-        }
-
-        dna.nucleotides
-            .truncate(Dna::bytes_to_store(i - found_newlines));
-        dna.length = i;
-
-        dna
-    }
-
     #[inline(always)]
     pub fn address(&self, index: usize) -> (usize, u8) {
         let block = index / NUCS_PER_BLOCK;
@@ -99,7 +69,7 @@ impl Dna {
     /// Initially sets the base at the given index (0-based).
     ///
     /// Note: If the index already contains set bits, bit patterns may cause bugs.
-    fn init_with(&mut self, index: usize, nucleotide: u8) {
+    pub(crate) fn init_with(&mut self, index: usize, nucleotide: u8) {
         let (block, bit) = self.address(index);
         self.nucleotides[block] |= nucleotide << bit;
     }
@@ -162,7 +132,10 @@ impl Dna {
         self.nucleotides.truncate(Dna::bytes_to_store(size));
     }
 
-    fn bytes_to_store(length: usize) -> usize {
+    /// Computes the number of bytes to store the given length.
+    ///
+    /// It assumes that each nucleotide is stored in 2 bits.
+    pub fn bytes_to_store(length: usize) -> usize {
         ((length as f32) / NUCS_PER_BLOCK as f32).ceil() as usize
     }
 }

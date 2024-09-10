@@ -12,3 +12,10 @@ rand = "0.8.5"
 [lib]
 name = "nuc"
 path = "src/lib.rs"
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[bench]]
+name = "sequence_benchmark"
+harness = false

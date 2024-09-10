@@ -1,12 +1,18 @@
 use std::fmt;
 use std::mem::size_of;
 
-const BITS_PER_NUCLEOTIDE: usize = 2;
+const NR_OF_NUCLEOTIDES: usize = 4;
 
-const NUCS_PER_BLOCK: usize = size_of::<u8>() * 4;
+const BITS_PER_NUCLEOTIDE: usize = NR_OF_NUCLEOTIDES.ilog2() as usize;
 
-const MASK: u8 = 3;
+const NUCS_PER_BLOCK: usize = size_of::<u8>() * NR_OF_NUCLEOTIDES;
 
+const MASK: u8 = NR_OF_NUCLEOTIDES as u8 - 1;
+
+/// Represents a _case-insensitive_ DNA sequence.
+///
+/// The DNA sequence is stored in a compact way, using 2 bits per nucleotide.
+/// This allows for a low memory footprint and fast bitwise operations.
 #[derive(Debug, Eq)]
 pub struct Dna {
     pub(crate) length: usize,
@@ -14,6 +20,9 @@ pub struct Dna {
 }
 
 impl Dna {
+    /// Creates a new DNA sequence with the given length.
+    ///
+    /// Every nucleotide is initialized to `A`.
     pub fn new(length: usize) -> Dna {
         Dna {
             length,
@@ -21,6 +30,12 @@ impl Dna {
         }
     }
 
+    /// Access the length of the DNA sequence.
+    ///
+    /// ```
+    /// let dna = nuc::dna::Dna::from_ascii("ACGT");
+    /// assert_eq!(dna.len(), 4);
+    /// ```
     pub fn len(&self) -> usize {
         self.length
     }
@@ -32,6 +47,12 @@ impl Dna {
         }
     }
 
+    /// Creates a DNA sequence from an ASCII string.
+    ///
+    /// ```
+    /// let dna = nuc::dna::Dna::from_ascii("ACGT");
+    /// assert_eq!(dna.to_string(), "ACGT");
+    /// ```
     pub fn from_ascii(ascii: &str) -> Dna {
         let mut dna = Dna {
             length: ascii.len(),
@@ -50,8 +71,22 @@ impl Dna {
         dna
     }
 
+    /// Draws a random DNA sequence with the given length.
+    ///
+    /// ```
+    /// let dna = nuc::dna::Dna::random(8);
+    /// assert_eq!(dna.len(), 8);
+    /// ```
+    pub fn random(length: usize) -> Dna {
+        let mut dna = Dna::new(length);
+        for i in 0..length {
+            dna.init_with(i, rand::random::<u8>() & MASK);
+        }
+        dna
+    }
+
     #[inline(always)]
-    pub fn address(&self, index: usize) -> (usize, u8) {
+    fn address(&self, index: usize) -> (usize, u8) {
         let block = index / NUCS_PER_BLOCK;
         let bit = ((NUCS_PER_BLOCK - 1 - (index % NUCS_PER_BLOCK)) * BITS_PER_NUCLEOTIDE) as u8;
         (block, bit)
@@ -59,7 +94,7 @@ impl Dna {
 
     /// Returns the internal bit sequence of the DNA sequence.
     pub fn bit_string(&self) -> String {
-        let mut bit_string = String::new();
+        let mut bit_string = String::with_capacity(self.len() * 2);
         for i in 0..self.nucleotides.len() {
             bit_string.push_str(&format!("{:08b} ", self.nucleotides[i]));
         }

@@ -1,5 +1,6 @@
 use std::fmt;
 use std::mem::size_of;
+use std::ops::Index;
 
 const NR_OF_NUCLEOTIDES: usize = 4;
 
@@ -9,10 +10,30 @@ const NUCS_PER_BLOCK: usize = size_of::<u8>() * NR_OF_NUCLEOTIDES;
 
 const MASK: u8 = NR_OF_NUCLEOTIDES as u8 - 1;
 
+pub enum Nucleotide {
+    A = 0,
+    C = 1,
+    G = 2,
+    T = 3,
+}
+
+const NUCS: [Nucleotide; NR_OF_NUCLEOTIDES] = [
+    Nucleotide::A,
+    Nucleotide::C,
+    Nucleotide::G,
+    Nucleotide::T,
+];
+
 /// Represents a _case-insensitive_ DNA sequence.
 ///
 /// The DNA sequence is stored in a compact way, using 2 bits per nucleotide.
 /// This allows for a low memory footprint and fast bitwise operations.
+/// 
+/// The bitwise encoding is as follows:
+/// - `00` for `A`
+/// - `01` for `C`
+/// - `10` for `G`
+/// - `11` for `T`
 #[derive(Debug, Eq)]
 pub struct Dna {
     pub(crate) length: usize,
@@ -99,6 +120,31 @@ impl Dna {
             bit_string.push_str(&format!("{:08b} ", self.nucleotides[i]));
         }
         bit_string
+    }
+
+    /// Counts every nucleotide in the DNA sequence.
+    ///
+    /// ```
+    /// use nuc::dna::Nucleotide;
+    ///
+    /// let dna = nuc::dna::Dna::from_ascii("ACATGCATGACAGTT");
+    /// let counts = dna.counts();
+    /// assert_eq!(counts[Nucleotide::A], 5);
+    /// assert_eq!(counts[Nucleotide::C], 3);
+    /// assert_eq!(counts[Nucleotide::G], 3);
+    /// assert_eq!(counts[Nucleotide::T], 4);
+    /// ```
+    pub fn counts(&self) -> NucCount {
+        let mut counts = NucCount { a: 0, c: 0, g: 0, t: 0 };
+        for i in 0..self.length {
+            match self.get(i) {
+                1 => counts.c += 1,
+                2 => counts.g += 1,
+                3 => counts.t += 1,
+                _ => counts.a += 1,
+            }
+        }
+        counts
     }
 
     /// Initially sets the base at the given index (0-based).
@@ -213,5 +259,38 @@ impl PartialOrd for Dna {
 impl Ord for Dna {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         PartialOrd::partial_cmp(self, other).unwrap()
+    }
+}
+
+impl Index<usize> for Dna {
+    type Output = Nucleotide;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match self.get(index) {
+            1 => &NUCS[1],
+            2 => &NUCS[2],
+            3 => &NUCS[3],
+            _ => &NUCS[0],
+        }
+    }
+}
+
+pub struct  NucCount {
+    a: usize,
+    c: usize,
+    g: usize,
+    t: usize,
+}
+
+impl Index<Nucleotide> for NucCount {
+    type Output = usize;
+
+    fn index(&self, index: Nucleotide) -> &Self::Output {
+        match index {
+            Nucleotide::A => &self.a,
+            Nucleotide::C => &self.c,
+            Nucleotide::G => &self.g,
+            Nucleotide::T => &self.t,
+        }
     }
 }

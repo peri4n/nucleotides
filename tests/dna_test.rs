@@ -52,7 +52,7 @@ fn can_be_appended() {
 
 #[test]
 fn kmer_cache_contains_correct_value() {
-    let cache = nuc::dna::KMER_CACHE;
+    let cache = &nuc::dna::KMER_CACHE;
     assert_eq!(cache[0], [4, 0, 0, 0]);
     assert_eq!(cache[1], [3, 1, 0, 0]);
     assert_eq!(cache[2], [3, 0, 1, 0]);

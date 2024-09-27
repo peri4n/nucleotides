@@ -1,21 +1,23 @@
-
 use nuc::{
     dna::Dna,
-    fasta::{self, FastaDna},
+    fasta::{self, FastaDna, FastaReader},
 };
 
 #[test]
 fn can_read_an_example_fasta_file() {
-    let fasta_content = ">Some Identifier\n\
+    let reader = FastaReader::new(
+        ">Some Identifier\n\
                          ATGCCGTA\n\
                          >Another Identifier\n\
                          CTAACGAA\n\
                          >Yet Another Identifier\n\
                          ATAC\n\
-                         ATAAGTAGGG";
-    let records = fasta::parse_records(fasta_content).unwrap().1;
+                         ATAAGTAGGG"
+            .as_bytes()
+    );
+
     assert_eq!(
-        records,
+        reader.into_iter().collect::<Vec<_>>(),
         vec![
             FastaDna {
                 id: "Some Identifier".to_string(),
@@ -35,6 +37,6 @@ fn can_read_an_example_fasta_file() {
 
 #[test]
 fn can_read_an_empty_fasta_file() {
-    let records = fasta::parse_records("").unwrap().1;
+    let records = FastaReader::new("".as_bytes()).into_iter().collect::<Vec<_>>();
     assert_eq!(records, vec![]);
 }

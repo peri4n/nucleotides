@@ -1,14 +1,27 @@
 use std::fmt;
 use std::mem::size_of;
 use std::ops::Index;
+use std::simd::Simd;
+use std::sync::LazyLock;
 
 const NR_OF_NUCLEOTIDES: usize = 4;
 
-const BITS_PER_NUCLEOTIDE: usize = NR_OF_NUCLEOTIDES.ilog2() as usize;
+const BITS_PER_NUCLEOTIDE: usize = NR_OF_NUCLEOTIDES.ilog2() as usize; // 2
 
-const NUCS_PER_BLOCK: usize = size_of::<u8>() * NR_OF_NUCLEOTIDES;
+const NUCS_PER_BLOCK: usize = size_of::<u8>() * NR_OF_NUCLEOTIDES; // 4
 
 const MASK: u8 = NR_OF_NUCLEOTIDES as u8 - 1;
+
+pub static KMER_CACHE: LazyLock<[[usize; 4]; 256]> = LazyLock::new(|| {
+    let mut cache = [[0; 4]; 256];
+    for i in 0..256 {
+        // cache i contains the numbers of A, C, G, and T in the binary representation of i
+        for j in 0..NR_OF_NUCLEOTIDES {
+            cache[i][(i >> (j * 2)) & MASK as usize] += 1;
+        }
+    }
+    cache
+});
 
 pub enum Nucleotide {
     A = 0,
@@ -34,6 +47,11 @@ const NUCS: [Nucleotide; NR_OF_NUCLEOTIDES] = [
 /// - `01` for `C`
 /// - `10` for `G`
 /// - `11` for `T`
+///
+/// The sequence of "ACGTACCTACGAACG" is stored as:
+///      Block 0 |     Block 1 |     Block 2 |     Block 3
+///   A  C  G  T |  A  C  C  T |  A  C  G  A |  A  C  G  _
+///  00 01 10 11 | 00 01 01 11 | 00 01 10 00 | 00 01 10 11
 #[derive(Debug, Eq)]
 pub struct Dna {
     pub(crate) length: usize,
@@ -109,6 +127,7 @@ impl Dna {
     /// assert_eq!(dna.len(), 8);
     /// ```
     pub fn random(length: usize) -> Dna {
+        // TODO: This constructor allocates too much memory
         let mut dna = Dna::new(length);
         for i in 0..length {
             dna.init_with(i, rand::random::<u8>() & MASK);
@@ -145,16 +164,15 @@ impl Dna {
     /// assert_eq!(counts[Nucleotide::T], 4);
     /// ```
     pub fn counts(&self) -> NucCount {
-        let mut counts = NucCount { a: 0, c: 0, g: 0, t: 0 };
-        for i in 0..self.length {
-            match self.get(i) {
-                1 => counts.c += 1,
-                2 => counts.g += 1,
-                3 => counts.t += 1,
-                _ => counts.a += 1,
-            }
+        let mut counts = Simd::from_array([0 as usize; NR_OF_NUCLEOTIDES]);
+        // handle all full blocks
+        for b in &self.nucleotides {
+            counts += Simd::from_array(KMER_CACHE[*b as usize]);
         }
-        counts
+
+        // handle the possibly incomplete last block
+        let empty_two_bits = NUCS_PER_BLOCK - self.length % NUCS_PER_BLOCK;
+        NucCount { a: counts[0] - empty_two_bits, c: counts[1], g: counts[2], t: counts[3] }
     }
 
     /// Initially sets the base at the given index (0-based).
@@ -234,11 +252,11 @@ impl Dna {
 impl fmt::Display for Dna {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for i in 0..self.length {
-            let c = match self.get(i) {
-                1 => 'C',
-                2 => 'G',
-                3 => 'T',
-                _ => 'A',
+            let c = match self[i] {
+                Nucleotide::A => 'A',
+                Nucleotide::C => 'C',
+                Nucleotide::G => 'G',
+                Nucleotide::T => 'T',
             };
             write!(f, "{}", c)?;
         }

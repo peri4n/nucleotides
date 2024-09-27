@@ -28,7 +28,7 @@
             else if builtins.pathExists ./rust-toolchain then
               rust.fromRustupToolchainFile ./rust-toolchain
             else
-              rust.stable.latest.default;
+              rust.nightly.latest.default;
         })
       ];
 

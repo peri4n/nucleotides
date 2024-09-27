@@ -1,3 +1,4 @@
+#![feature(portable_simd)]
 //! `nuc` is a library for working with nucleotide sequences.
 //!
 //! It's goal is to provide the fastest and easiest way to work with DNA and RNA sequences.

@@ -49,3 +49,18 @@ fn can_be_appended() {
 
     assert_eq!(dna.to_string(), "ATGCCGTAAAACCCGGGTTT");
 }
+
+#[test]
+fn kmer_cache_contains_correct_value() {
+    let cache = nuc::dna::KMER_CACHE;
+    assert_eq!(cache[0], [4, 0, 0, 0]);
+    assert_eq!(cache[1], [3, 1, 0, 0]);
+    assert_eq!(cache[2], [3, 0, 1, 0]);
+    assert_eq!(cache[3], [3, 0, 0, 1]);
+    assert_eq!(cache[4], [3, 1, 0, 0]);
+    assert_eq!(cache[5], [2, 2, 0, 0]);
+
+    cache.iter().for_each(|&kmer| {
+        assert_eq!(kmer[0] + kmer[1] + kmer[2] + kmer[3], 4);
+    });
+}

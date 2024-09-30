@@ -1,41 +1,37 @@
 use std::io::{BufReader, BufRead, Read};
 
+#[derive(Debug)]
 pub struct FastaReader<R: Read> {
     reader: BufReader<R>,
     next_id: Option<String>,
 
 }
 
-impl<R: Read> FastaReader<R> {
+impl<R: Read + std::fmt::Debug> FastaReader<R> {
     pub fn new(reader: R) -> Self {
         Self { reader: BufReader::new(reader), next_id: None }
     }
 }
 
-impl<R: Read> Iterator for FastaReader<R> {
+impl<R: Read + std::fmt::Debug> Iterator for FastaReader<R> {
     type Item = FastaDna;
 
     fn next(&mut self) -> Option<Self::Item> {
+        println!("next:");
         let mut id = self.next_id.take().unwrap_or_default();
         let mut sequence = String::with_capacity(1000);
-        //if let Ok(buffer) = self.reader.fill_buf() {
-        //
-        //} else {
-        //
-        //}
 
+        let mut line = String::new();
         loop {
-            let mut line = String::new();
             match self.reader.read_line(&mut line) {
-                // buffer is completely read
                 Ok(0) => {
                     if id.is_empty() {
                         return None;
                     } else {
+                        self.next_id = None;
                         return Some(FastaDna { id, sequence: Dna::from_ascii(&sequence) });
                     }
                 }
-                // buffer is not empty yet
                 Ok(_) => {
                     if line.starts_with('>') {
                         self.next_id = Some(line[1..].trim().to_string());
@@ -52,6 +48,7 @@ impl<R: Read> Iterator for FastaReader<R> {
                     return None;
                 }
             }
+            line.clear();
         }
     }
 }

@@ -245,7 +245,7 @@ impl Dna {
     ///
     /// It assumes that each nucleotide is stored in 2 bits.
     pub fn bytes_to_store(length: usize) -> usize {
-        ((length as f32) / NUCS_PER_BLOCK as f32).ceil() as usize
+        (length / NUCS_PER_BLOCK) + if length % NUCS_PER_BLOCK == 0 { 0 } else { 1 }
     }
 }
 

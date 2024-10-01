@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, Criterion};
 use nuc::dna::Dna;
 
 pub fn counting_nucleotides_benchmark(c: &mut Criterion) {
@@ -11,5 +11,4 @@ pub fn reverse_complement_benchmark(c: &mut Criterion) {
     c.bench_function("create the reverse complement", |b| b.iter(|| dna.rc()));
 }
 
-criterion_group!(benches, counting_nucleotides_benchmark, reverse_complement_benchmark);
-criterion_main!(benches);
+criterion_group!(dna_benches, counting_nucleotides_benchmark, reverse_complement_benchmark);

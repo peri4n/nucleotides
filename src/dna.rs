@@ -118,7 +118,6 @@ impl Dna {
             dna.nucleotides[i] = hash_chars_be(b);
             i += 1;
         }
-        dbg!(&dna);
 
         dna
     }

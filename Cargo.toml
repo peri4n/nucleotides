@@ -17,5 +17,5 @@ path = "src/lib.rs"
 criterion = "0.5.1"
 
 [[bench]]
-name = "sequence_benchmark"
+name = "all_benchmark"
 harness = false

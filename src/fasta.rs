@@ -17,7 +17,6 @@ impl<R: Read + std::fmt::Debug> Iterator for FastaReader<R> {
     type Item = FastaDna;
 
     fn next(&mut self) -> Option<Self::Item> {
-        println!("next:");
         let mut id = self.next_id.take().unwrap_or_default();
         let mut sequence = String::with_capacity(1000);
 

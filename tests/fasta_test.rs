@@ -44,10 +44,3 @@ fn can_read_an_empty_fasta_file() {
     let records = FastaReader::new("".as_bytes()).into_iter().collect::<Vec<_>>();
     assert_eq!(records, vec![]);
 }
-
-#[test]
-fn read_chromosome1() {
-    let reader = FastaReader::new(File::open("/home/fbull/test.fa").unwrap());
-
-    assert_eq!(reader.into_iter().count(), 1);
-}

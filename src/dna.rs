@@ -4,6 +4,8 @@ use std::ops::Index;
 use std::simd::Simd;
 use std::sync::LazyLock;
 
+use crate::hash::{hash_chars_be, hash_chars_le, CHAR_TO_TWO_BIT};
+
 const NR_OF_NUCLEOTIDES: usize = 4;
 
 const BITS_PER_NUCLEOTIDE: usize = NR_OF_NUCLEOTIDES.ilog2() as usize; // 2
@@ -12,7 +14,7 @@ const NUCS_PER_BLOCK: usize = size_of::<u8>() * NR_OF_NUCLEOTIDES; // 4
 
 const MASK: u8 = NR_OF_NUCLEOTIDES as u8 - 1;
 
-pub static KMER_CACHE: LazyLock<[[usize; 4]; 256]> = LazyLock::new(|| {
+pub static NUC_COUNT_CACHE: LazyLock<[[usize; 4]; 256]> = LazyLock::new(|| {
     let mut cache = [[0; 4]; 256];
     for i in 0..256 {
         // cache i contains the numbers of A, C, G, and T in the binary representation of i
@@ -23,6 +25,7 @@ pub static KMER_CACHE: LazyLock<[[usize; 4]; 256]> = LazyLock::new(|| {
     cache
 });
 
+#[derive(Debug, PartialEq)]
 pub enum Nucleotide {
     A = 0,
     C = 1,
@@ -108,16 +111,21 @@ impl Dna {
             nucleotides: vec![0; Dna::bytes_to_store(ascii.len())],
         };
 
-        for (i, c) in ascii.char_indices() {
-            match c {
-                'C' | 'c' => dna.init_with(i, 1),
-                'G' | 'g' => dna.init_with(i, 2),
-                'T' | 't' => dna.init_with(i, 3),
-                _ => dna.init_with(i, 0),
-            }
+        let bytes = ascii.as_bytes();
+        let mut i = 0;
+
+        for b in bytes.chunks(4) {
+            dna.nucleotides[i] = hash_chars_be(b);
+            i += 1;
         }
+        dbg!(&dna);
 
         dna
+    }
+
+    /// Return the internal byte representation of the DNA sequence.
+    pub fn as_bytes(&self) -> &Vec<u8> {
+        &self.nucleotides
     }
 
     /// Draws a random DNA sequence with the given length.
@@ -167,17 +175,18 @@ impl Dna {
         let mut counts = Simd::from_array([0 as usize; NR_OF_NUCLEOTIDES]);
         // handle all full blocks
         for b in &self.nucleotides {
-            counts += Simd::from_array(KMER_CACHE[*b as usize]);
+            counts += Simd::from_array(NUC_COUNT_CACHE[*b as usize]);
         }
 
         // handle the possibly incomplete last block
-        let empty_two_bits = NUCS_PER_BLOCK - self.length % NUCS_PER_BLOCK;
-        NucCount { a: counts[0] - empty_two_bits, c: counts[1], g: counts[2], t: counts[3] }
+        let unset_two_bits = NUCS_PER_BLOCK - self.length % NUCS_PER_BLOCK;
+        NucCount { a: counts[0] - unset_two_bits, c: counts[1], g: counts[2], t: counts[3] }
     }
 
     /// Initially sets the base at the given index (0-based).
     ///
     /// Note: If the index already contains set bits, bit patterns may cause bugs.
+    #[inline(always)]
     pub(crate) fn init_with(&mut self, index: usize, nucleotide: u8) {
         let (block, bit) = self.address(index);
         self.nucleotides[block] |= nucleotide << bit;

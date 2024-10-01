@@ -8,3 +8,6 @@ pub mod dna;
 
 /// Handles IO with FastA files.
 pub mod fasta;
+
+/// Handles hashing of DNA sequences.
+pub mod hash;

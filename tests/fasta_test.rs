@@ -1,3 +1,5 @@
+mod hash_test;
+
 use std::fs::File;
 
 use nuc::{

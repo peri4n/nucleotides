@@ -44,6 +44,7 @@
           cargo-deny
           cargo-edit
           cargo-watch
+          cargo-flamegraph
           rust-analyzer
         ];
 

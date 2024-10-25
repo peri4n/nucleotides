@@ -1,4 +1,5 @@
 #![feature(portable_simd)]
+#![feature(bufread_skip_until)]
 //! `nuc` is a library for working with nucleotide sequences.
 //!
 //! It's goal is to provide the fastest and easiest way to work with DNA and RNA sequences.
@@ -7,7 +8,7 @@
 pub mod dna;
 
 /// Handles IO with FastA files.
-pub mod fasta;
+pub mod io;
 
 /// Handles hashing of DNA sequences.
 pub mod hash;

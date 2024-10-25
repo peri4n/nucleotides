@@ -43,8 +43,6 @@ fn can_be_sorted() {
     ];
     sequences.sort();
 
-    println!("{:?}", sequences);
-
     assert_eq!(
         sequences,
         vec![

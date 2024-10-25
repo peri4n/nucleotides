@@ -1,10 +1,6 @@
-mod hash_test;
-
-use std::fs::File;
-
 use nuc::{
     dna::Dna,
-    fasta::{FastaDna, FastaReader},
+    io::fasta::{FastaDna, FastaReader},
 };
 
 #[test]

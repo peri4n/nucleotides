@@ -15,6 +15,7 @@ path = "src/lib.rs"
 
 [dev-dependencies]
 criterion = "0.5.1"
+proptest = "1.11.0"
 
 [[bench]]
 name = "all_benchmark"

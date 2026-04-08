@@ -4,7 +4,7 @@ use std::ops::Index;
 use std::simd::Simd;
 use std::sync::LazyLock;
 
-use crate::hash::{hash_chars_be, hash_chars_le, CHAR_TO_TWO_BIT};
+use crate::hash::hash_chars_be;
 
 const NR_OF_NUCLEOTIDES: usize = 4;
 

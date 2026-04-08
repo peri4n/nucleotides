@@ -81,3 +81,19 @@ fn kmer_cache_contains_correct_value() {
         assert_eq!(kmer[0] + kmer[1] + kmer[2] + kmer[3], 4);
     });
 }
+
+proptest::proptest! {
+
+    #[test]
+    fn can_be_created_from_random_string(s in "ATGC{0,100}") {
+        let dna = Dna::try_from(s.as_str()).unwrap();
+        assert_eq!(dna.to_string(), s);
+    }
+
+    #[test]
+    fn can_be_created_from_random_string_with_uppercases(s in "[ATGCatgc]{0,100}") {
+        let dna = Dna::try_from(s.as_str()).unwrap();
+        assert_eq!(dna.to_string(), s.to_uppercase());
+    }
+
+}

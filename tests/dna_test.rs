@@ -1,4 +1,5 @@
 use nuc::dna::{Dna, Nucleotide};
+use proptest::prelude::prop;
 
 #[test]
 fn can_be_created_from_a_string_with_perfect_alignment() {
@@ -94,6 +95,12 @@ proptest::proptest! {
     fn can_be_created_from_random_string_with_uppercases(s in "[ATGCatgc]{0,100}") {
         let dna = Dna::try_from(s.as_str()).unwrap();
         assert_eq!(dna.to_string(), s.to_uppercase());
+    }
+    
+    #[test]
+    fn can_be_created_from_random_bytes(bytes in prop::collection::vec(0u8..=255, 0..100)) {
+        let dna = Dna::from_bytes(&bytes);
+        assert_eq!(dna.as_bytes(), &bytes);
     }
 
 }

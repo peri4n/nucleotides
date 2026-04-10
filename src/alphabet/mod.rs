@@ -16,6 +16,9 @@ pub trait Alphabet: 'static + Eq {
 
     const ELEMENTS: &'static [Self::Elements];
 
+    /// Lookup table: ASCII byte → bit value. 0xFF = invalid.
+    const BYTE_TO_BITS: [u8; 256];
+
     /// Convert an ASCII byte to a typed element
     fn from_byte(b: u8) -> Self::Elements;
 

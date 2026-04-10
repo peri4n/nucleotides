@@ -27,6 +27,36 @@ pub struct Nuc4;
 #[derive(Debug, PartialEq, Eq)]
 pub struct Nuc5;
 
+// -- LUT generation ----------------------------------------------------------
+
+const NUC4_BYTE_TO_BITS: [u8; 256] = {
+    let mut lut = [0xFFu8; 256];
+    lut[b'A' as usize] = 0;
+    lut[b'a' as usize] = 0;
+    lut[b'C' as usize] = 1;
+    lut[b'c' as usize] = 1;
+    lut[b'G' as usize] = 2;
+    lut[b'g' as usize] = 2;
+    lut[b'T' as usize] = 3;
+    lut[b't' as usize] = 3;
+    lut
+};
+
+const NUC5_BYTE_TO_BITS: [u8; 256] = {
+    let mut lut = [0xFFu8; 256];
+    lut[b'A' as usize] = 0;
+    lut[b'a' as usize] = 0;
+    lut[b'C' as usize] = 1;
+    lut[b'c' as usize] = 1;
+    lut[b'G' as usize] = 2;
+    lut[b'g' as usize] = 2;
+    lut[b'T' as usize] = 3;
+    lut[b't' as usize] = 3;
+    lut[b'N' as usize] = 4;
+    lut[b'n' as usize] = 4;
+    lut
+};
+
 // -- Alphabet impls ----------------------------------------------------------
 
 const NUC4_ELEMENTS: &[Nucleotide] = &[Nucleotide::A, Nucleotide::C, Nucleotide::G, Nucleotide::T];
@@ -44,25 +74,19 @@ impl Alphabet for Nuc4 {
     const SIZE: u8 = 4;
     const BITS: u8 = 2;
     const ELEMENTS: &'static [Nucleotide] = NUC4_ELEMENTS;
+    const BYTE_TO_BITS: [u8; 256] = NUC4_BYTE_TO_BITS;
 
     fn from_byte(b: u8) -> Nucleotide {
-        match b {
-            b'A' | b'a' => Nucleotide::A,
-            b'C' | b'c' => Nucleotide::C,
-            b'G' | b'g' => Nucleotide::G,
-            b'T' | b't' => Nucleotide::T,
-            _ => panic!("invalid Nuc4 byte"),
-        }
+        let bits = Self::BYTE_TO_BITS[b as usize];
+        debug_assert!(bits != 0xFF, "invalid Nuc4 byte");
+        // SAFETY: ELEMENTS has 4 entries, valid bits are 0..3
+        unsafe { *Self::ELEMENTS.get_unchecked(bits as usize) }
     }
 
     fn to_byte(e: Nucleotide) -> u8 {
-        match e {
-            Nucleotide::A => b'A',
-            Nucleotide::C => b'C',
-            Nucleotide::G => b'G',
-            Nucleotide::T => b'T',
-            Nucleotide::N => panic!("N is not a valid Nuc4 symbol"),
-        }
+        const LUT: [u8; 5] = [b'A', b'C', b'G', b'T', 0];
+        debug_assert!((e as u8) < 4, "N is not a valid Nuc4 symbol");
+        LUT[e as usize]
     }
 }
 
@@ -71,26 +95,18 @@ impl Alphabet for Nuc5 {
     const SIZE: u8 = 5;
     const BITS: u8 = 3;
     const ELEMENTS: &'static [Nucleotide] = NUC5_ELEMENTS;
+    const BYTE_TO_BITS: [u8; 256] = NUC5_BYTE_TO_BITS;
 
     fn from_byte(b: u8) -> Nucleotide {
-        match b {
-            b'A' | b'a' => Nucleotide::A,
-            b'C' | b'c' => Nucleotide::C,
-            b'G' | b'g' => Nucleotide::G,
-            b'T' | b't' => Nucleotide::T,
-            b'N' | b'n' => Nucleotide::N,
-            _ => panic!("invalid Nuc5 byte"),
-        }
+        let bits = Self::BYTE_TO_BITS[b as usize];
+        debug_assert!(bits != 0xFF, "invalid Nuc5 byte");
+        // SAFETY: ELEMENTS has 5 entries, valid bits are 0..4
+        unsafe { *Self::ELEMENTS.get_unchecked(bits as usize) }
     }
 
     fn to_byte(e: Nucleotide) -> u8 {
-        match e {
-            Nucleotide::A => b'A',
-            Nucleotide::C => b'C',
-            Nucleotide::G => b'G',
-            Nucleotide::T => b'T',
-            Nucleotide::N => b'N',
-        }
+        const LUT: [u8; 5] = [b'A', b'C', b'G', b'T', b'N'];
+        LUT[e as usize]
     }
 }
 

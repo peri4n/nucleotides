@@ -32,6 +32,79 @@ impl From<AminoAcid> for u8 {
     }
 }
 
+const AA20_BYTE_TO_BITS: [u8; 256] = {
+    let mut lut = [0xFFu8; 256];
+    lut[b'A' as usize] = 0;
+    lut[b'a' as usize] = 0;
+    lut[b'C' as usize] = 1;
+    lut[b'c' as usize] = 1;
+    lut[b'D' as usize] = 2;
+    lut[b'd' as usize] = 2;
+    lut[b'E' as usize] = 3;
+    lut[b'e' as usize] = 3;
+    lut[b'F' as usize] = 4;
+    lut[b'f' as usize] = 4;
+    lut[b'G' as usize] = 5;
+    lut[b'g' as usize] = 5;
+    lut[b'H' as usize] = 6;
+    lut[b'h' as usize] = 6;
+    lut[b'I' as usize] = 7;
+    lut[b'i' as usize] = 7;
+    lut[b'K' as usize] = 8;
+    lut[b'k' as usize] = 8;
+    lut[b'L' as usize] = 9;
+    lut[b'l' as usize] = 9;
+    lut[b'M' as usize] = 10;
+    lut[b'm' as usize] = 10;
+    lut[b'N' as usize] = 11;
+    lut[b'n' as usize] = 11;
+    lut[b'P' as usize] = 12;
+    lut[b'p' as usize] = 12;
+    lut[b'Q' as usize] = 13;
+    lut[b'q' as usize] = 13;
+    lut[b'R' as usize] = 14;
+    lut[b'r' as usize] = 14;
+    lut[b'S' as usize] = 15;
+    lut[b's' as usize] = 15;
+    lut[b'T' as usize] = 16;
+    lut[b't' as usize] = 16;
+    lut[b'V' as usize] = 17;
+    lut[b'v' as usize] = 17;
+    lut[b'W' as usize] = 18;
+    lut[b'w' as usize] = 18;
+    lut[b'Y' as usize] = 19;
+    lut[b'y' as usize] = 19;
+    lut
+};
+
+const AA20_ELEMENTS: &[AminoAcid] = &[
+    AminoAcid::A,
+    AminoAcid::C,
+    AminoAcid::D,
+    AminoAcid::E,
+    AminoAcid::F,
+    AminoAcid::G,
+    AminoAcid::H,
+    AminoAcid::I,
+    AminoAcid::K,
+    AminoAcid::L,
+    AminoAcid::M,
+    AminoAcid::N,
+    AminoAcid::P,
+    AminoAcid::Q,
+    AminoAcid::R,
+    AminoAcid::S,
+    AminoAcid::T,
+    AminoAcid::V,
+    AminoAcid::W,
+    AminoAcid::Y,
+];
+
+const AA20_TO_BYTE: [u8; 20] = [
+    b'A', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'K', b'L', b'M', b'N', b'P', b'Q', b'R', b'S',
+    b'T', b'V', b'W', b'Y',
+];
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct AA20;
 
@@ -41,77 +114,17 @@ impl Alphabet for AA20 {
     const SIZE: u8 = 20;
     const BITS: u8 = 5;
 
-    const ELEMENTS: &'static [AminoAcid] = &[
-        AminoAcid::A,
-        AminoAcid::C,
-        AminoAcid::D,
-        AminoAcid::E,
-        AminoAcid::F,
-        AminoAcid::G,
-        AminoAcid::H,
-        AminoAcid::I,
-        AminoAcid::K,
-        AminoAcid::L,
-        AminoAcid::M,
-        AminoAcid::N,
-        AminoAcid::P,
-        AminoAcid::Q,
-        AminoAcid::R,
-        AminoAcid::S,
-        AminoAcid::T,
-        AminoAcid::V,
-        AminoAcid::W,
-        AminoAcid::Y,
-    ];
+    const ELEMENTS: &'static [AminoAcid] = AA20_ELEMENTS;
+    const BYTE_TO_BITS: [u8; 256] = AA20_BYTE_TO_BITS;
 
     fn from_byte(b: u8) -> AminoAcid {
-        match b {
-            b'A' | b'a' => AminoAcid::A,
-            b'C' | b'c' => AminoAcid::C,
-            b'D' | b'd' => AminoAcid::D,
-            b'E' | b'e' => AminoAcid::E,
-            b'F' | b'f' => AminoAcid::F,
-            b'G' | b'g' => AminoAcid::G,
-            b'H' | b'h' => AminoAcid::H,
-            b'I' | b'i' => AminoAcid::I,
-            b'K' | b'k' => AminoAcid::K,
-            b'L' | b'l' => AminoAcid::L,
-            b'M' | b'm' => AminoAcid::M,
-            b'N' | b'n' => AminoAcid::N,
-            b'P' | b'p' => AminoAcid::P,
-            b'Q' | b'q' => AminoAcid::Q,
-            b'R' | b'r' => AminoAcid::R,
-            b'S' | b's' => AminoAcid::S,
-            b'T' | b't' => AminoAcid::T,
-            b'V' | b'v' => AminoAcid::V,
-            b'W' | b'w' => AminoAcid::W,
-            b'Y' | b'y' => AminoAcid::Y,
-            _ => panic!("invalid amino acid byte"),
-        }
+        let bits = Self::BYTE_TO_BITS[b as usize];
+        debug_assert!(bits != 0xFF, "invalid amino acid byte");
+        // SAFETY: ELEMENTS has 20 entries, valid bits are 0..19
+        unsafe { *Self::ELEMENTS.get_unchecked(bits as usize) }
     }
 
     fn to_byte(e: AminoAcid) -> u8 {
-        match e {
-            AminoAcid::A => b'A',
-            AminoAcid::C => b'C',
-            AminoAcid::D => b'D',
-            AminoAcid::E => b'E',
-            AminoAcid::F => b'F',
-            AminoAcid::G => b'G',
-            AminoAcid::H => b'H',
-            AminoAcid::I => b'I',
-            AminoAcid::K => b'K',
-            AminoAcid::L => b'L',
-            AminoAcid::M => b'M',
-            AminoAcid::N => b'N',
-            AminoAcid::P => b'P',
-            AminoAcid::Q => b'Q',
-            AminoAcid::R => b'R',
-            AminoAcid::S => b'S',
-            AminoAcid::T => b'T',
-            AminoAcid::V => b'V',
-            AminoAcid::W => b'W',
-            AminoAcid::Y => b'Y',
-        }
+        AA20_TO_BYTE[e as usize]
     }
 }

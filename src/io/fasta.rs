@@ -32,15 +32,15 @@ impl<R: Read + std::fmt::Debug> Iterator for FastaReader<R> {
                     }
                 }
                 Ok(_) => {
-                    if line.starts_with('>') {
-                        self.next_id = Some(line[1..].trim().to_string());
+                    if let Some(l) = line.strip_prefix('>') {
+                        self.next_id = Some(l.trim().to_string());
                         if !id.is_empty() {
                             return Some(FastaDna { id, sequence: Dna::from_ascii(&sequence) });
                         }
                         id = line[1..].trim().to_string();
                         sequence.clear();
                     } else {
-                        sequence.push_str(&line.trim());
+                        sequence.push_str(line.trim());
                     }
                 }
                 Err(_) => {

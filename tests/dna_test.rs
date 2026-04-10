@@ -1,9 +1,9 @@
-use nuc::dna::{Dna, Nucleotide};
+use nuc::{dna::*, dna4};
 use proptest::prelude::prop;
 
 #[test]
 fn can_be_created_from_a_string_with_perfect_alignment() {
-    let dna = Dna::try_from("ATGCCGTA").unwrap();
+    let dna = dna4!("ATGCCGTA");
 
     assert_eq!(*dna.as_bytes(), vec![0b00111001, 0b01101100]);
 
@@ -20,7 +20,7 @@ fn can_be_created_from_a_string_with_perfect_alignment() {
 
 #[test]
 fn can_be_created_from_a_string_three_empty_nucleotides() {
-    let dna = Dna::try_from("TGCAT").unwrap();
+    let dna = dna4!("TGCAT");
 
     assert_eq!(*dna.as_bytes(), vec![0b11100100, 0b11000000]);
 
@@ -31,7 +31,6 @@ fn can_be_created_from_a_string_three_empty_nucleotides() {
     assert_eq!(dna[4], Nucleotide::T);
     assert_eq!(dna.len(), 5);
 }
-
 
 #[test]
 fn can_be_sorted() {
@@ -89,14 +88,16 @@ proptest::proptest! {
     fn can_be_created_from_random_string(s in "ATGC{0,100}") {
         let dna = Dna::try_from(s.as_str()).unwrap();
         assert_eq!(dna.to_string(), s);
+        assert_eq!(dna.len(), s.len());
     }
 
     #[test]
     fn can_be_created_from_random_string_with_uppercases(s in "[ATGCatgc]{0,100}") {
         let dna = Dna::try_from(s.as_str()).unwrap();
         assert_eq!(dna.to_string(), s.to_uppercase());
+        assert_eq!(dna.len(), s.len());
     }
-    
+
     #[test]
     fn can_be_created_from_random_bytes(bytes in prop::collection::vec(0u8..=255, 0..100)) {
         let dna = Dna::from_bytes(&bytes);

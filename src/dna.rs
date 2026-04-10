@@ -33,18 +33,14 @@ pub enum Nucleotide {
     T = 3,
 }
 
-const NUCS: [Nucleotide; NR_OF_NUCLEOTIDES] = [
-    Nucleotide::A,
-    Nucleotide::C,
-    Nucleotide::G,
-    Nucleotide::T,
-];
+const NUCS: [Nucleotide; NR_OF_NUCLEOTIDES] =
+    [Nucleotide::A, Nucleotide::C, Nucleotide::G, Nucleotide::T];
 
 /// Represents a _case-insensitive_ DNA sequence.
 ///
 /// The DNA sequence is stored in a compact way, using 2 bits per nucleotide.
 /// This allows for a low memory footprint and fast bitwise operations.
-/// 
+///
 /// The bitwise encoding is as follows:
 /// - `00` for `A`
 /// - `01` for `C`
@@ -111,12 +107,8 @@ impl Dna {
             nucleotides: vec![0; Dna::bytes_to_store(ascii.len())],
         };
 
-        let bytes = ascii.as_bytes();
-        let mut i = 0;
-
-        for b in bytes.chunks(4) {
+        for (i, b) in ascii.as_bytes().chunks(4).enumerate() {
             dna.nucleotides[i] = hash_chars_be(b);
-            i += 1;
         }
 
         dna
@@ -171,7 +163,7 @@ impl Dna {
     /// assert_eq!(counts[Nucleotide::T], 4);
     /// ```
     pub fn counts(&self) -> NucCount {
-        let mut counts = Simd::from_array([0 as usize; NR_OF_NUCLEOTIDES]);
+        let mut counts = Simd::from_array([0; NR_OF_NUCLEOTIDES]);
         // handle all full blocks
         for b in &self.nucleotides {
             counts += Simd::from_array(NUC_COUNT_CACHE[*b as usize]);
@@ -179,7 +171,12 @@ impl Dna {
 
         // handle the possibly incomplete last block
         let unset_two_bits = NUCS_PER_BLOCK - self.length % NUCS_PER_BLOCK;
-        NucCount { a: counts[0] - unset_two_bits, c: counts[1], g: counts[2], t: counts[3] }
+        NucCount {
+            a: counts[0] - unset_two_bits,
+            c: counts[1],
+            g: counts[2],
+            t: counts[3],
+        }
     }
 
     /// Initially sets the base at the given index (0-based).
@@ -253,7 +250,12 @@ impl Dna {
     ///
     /// It assumes that each nucleotide is stored in 2 bits.
     pub fn bytes_to_store(length: usize) -> usize {
-        (length / NUCS_PER_BLOCK) + if length % NUCS_PER_BLOCK == 0 { 0 } else { 1 }
+        (length / NUCS_PER_BLOCK)
+            + if length.is_multiple_of(NUCS_PER_BLOCK) {
+                0
+            } else {
+                1
+            }
     }
 }
 
@@ -288,13 +290,13 @@ impl PartialEq for Dna {
 
 impl PartialOrd for Dna {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.nucleotides.cmp(&other.nucleotides))
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for Dna {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        PartialOrd::partial_cmp(self, other).unwrap()
+        self.nucleotides.cmp(&other.nucleotides)
     }
 }
 
@@ -311,7 +313,7 @@ impl Index<usize> for Dna {
     }
 }
 
-pub struct  NucCount {
+pub struct NucCount {
     a: usize,
     c: usize,
     g: usize,
@@ -329,4 +331,30 @@ impl Index<Nucleotide> for NucCount {
             Nucleotide::T => &self.t,
         }
     }
+}
+
+pub const fn is_valid_dna(s: &str) -> bool {
+    let bytes = s.as_bytes();
+    let mut i = 0;
+
+    while i < bytes.len() {
+        match bytes[i] {
+            b'A' | b'C' | b'G' | b'T' => {}
+            _ => return false,
+        }
+        i += 1;
+    }
+
+    true
+}
+
+#[macro_export]
+macro_rules! dna4 {
+    ($s:literal) => {{
+        const VALID: bool = $crate::dna::is_valid_dna($s);
+        if !VALID {
+            panic!("Invalid DNA sequence literal");
+        }
+        $crate::dna::Dna::from_ascii($s)
+    }};
 }

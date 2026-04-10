@@ -29,9 +29,9 @@ impl<R: Read + std::fmt::Debug> Iterator for FastqReader<R> {
                 '+' => (),
                 _ => {
                     if sequence.is_empty() {
-                        sequence.push_str(&line.trim());
+                        sequence.push_str(line.trim());
                     } else {
-                        qualities.push_str(&line.trim());
+                        qualities.push_str(line.trim());
                     }
                 }
             }
